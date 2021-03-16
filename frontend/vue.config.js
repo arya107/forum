@@ -1,6 +1,6 @@
 module.exports = {
-	devServer: {
-		proxy: 'http://localhost:3000'
-	},
-	publicPath: '/static'
-}
+  devServer: {
+    proxy: "http://localhost:3000"
+  },
+  publicPath: "/static"
+};

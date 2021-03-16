@@ -1,20 +1,20 @@
 const state = {
-	selectedCategory: ''
-}
+  selectedCategory: "",
+};
 
-const getters = {}
+const getters = {};
 
-const actions = {}
+const actions = {};
 
 const mutations = {
-	setSelectedCategory (state, val) {
-		state.selectedCategory = val
-	}
-}
+  setSelectedCategory(state, val) {
+    state.selectedCategory = val;
+  },
+};
 
 export default {
-	state,
-	getters,
-	actions,
-	mutations
-}
+  state,
+  getters,
+  actions,
+  mutations,
+};

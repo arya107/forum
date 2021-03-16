@@ -2,23 +2,27 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('Settings', {
-      id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+    return queryInterface.createTable(
+      'Settings',
+      {
+        id: {
+          type: Sequelize.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        createdAt: Sequelize.DATE,
+        updatedAt: Sequelize.DATE,
+
+        forumName: Sequelize.STRING,
+        forumDescription: Sequelize.STRING,
       },
-      createdAt: Sequelize.DATE,
-      updatedAt: Sequelize.DATE,
-      
-      forumName: Sequelize.STRING,
-      forumDescription: Sequelize.STRING
-    }, {
-      charset: 'utf8mb4'
-    })
+      {
+        charset: 'utf8mb4',
+      }
+    );
   },
 
   down: (queryInterface, Sequelize) => {
     return queryInterface.dropTable('Settings');
-  }
+  },
 };

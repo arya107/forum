@@ -1,113 +1,114 @@
-process.env.NODE_ENV = 'test'
+process.env.NODE_ENV = 'test';
 
-let chai = require('chai')
-let should = chai.should()
+let chai = require('chai');
+let should = chai.should();
 
-chai.use(require('chai-http'))
-chai.use(require('chai-things'))
+chai.use(require('chai-http'));
+chai.use(require('chai-things'));
 
-let server = require('../server')
+let server = require('../server');
 let io = require('socket.io-client');
 
-let { sequelize } = require('../models')
+let { sequelize } = require('../models');
 
-const Errors = require('../lib/errors.js')
+const Errors = require('../lib/errors.js');
 
 describe('Socket-io', () => {
-	//Wait for app to start before commencing
-	before((done) => {
-		if(server.locals.appStarted) done()
-		server.on('appStarted', () => { done() })
-	})
+  //Wait for app to start before commencing
+  before((done) => {
+    if (server.locals.appStarted) done();
+    server.on('appStarted', () => {
+      done();
+    });
+  });
 
-	//Delete all rows in table after
-	//tests completed
-	after(() => {
-		sequelize.sync({ force: true })
-	})
+  //Delete all rows in table after
+  //tests completed
+  after(() => {
+    sequelize.sync({ force: true });
+  });
 
-	describe('new thread notifications', async () => {
-		let agent = chai.request.agent(server)
+  describe('new thread notifications', async () => {
+    let agent = chai.request.agent(server);
 
-		//Create mock threads and posts
-		before(async () => {
-			await agent
-				.post('/api/v1/user')
-				.set('content-type', 'application/json')
-				.send({
-					username: 'adminaccount',
-					password: 'password',
-					admin: true
-				})
+    //Create mock threads and posts
+    before(async () => {
+      await agent
+        .post('/api/v1/user')
+        .set('content-type', 'application/json')
+        .send({
+          username: 'adminaccount',
+          password: 'password',
+          admin: true,
+        });
 
-			await agent
-				.post('/api/v1/category')
-				.set('content-type', 'application/json')
-				.send({ name: 'category_name' })
+      await agent
+        .post('/api/v1/category')
+        .set('content-type', 'application/json')
+        .send({ name: 'category_name' });
 
-			for(var i = 0; i < 3; i++) {
-				let thread = await agent
-					.post('/api/v1/thread')
-					.set('content-type', 'application/json')
-					.send({ name: `THREAD ${i}` , category: 'category_name' })
+      for (var i = 0; i < 3; i++) {
+        let thread = await agent
+          .post('/api/v1/thread')
+          .set('content-type', 'application/json')
+          .send({ name: `THREAD ${i}`, category: 'category_name' });
 
-				await agent
-					.post('/api/v1/post')
-					.set('content-type', 'application/json')
-					.send({ threadId: thread.body.id , content: `POST ${i}` })
-			}
-		})
+        await agent
+          .post('/api/v1/post')
+          .set('content-type', 'application/json')
+          .send({ threadId: thread.body.id, content: `POST ${i}` });
+      }
+    });
 
-		it('should emit a notification when a thread is created	', (done) => {
-			let client = io.connect('http://localhost:3000')
-			client.emit('join', 'index')
+    it('should emit a notification when a thread is created	', (done) => {
+      let client = io.connect('http://localhost:3000');
+      client.emit('join', 'index');
 
-			client.on('new thread', data => {
-				data.should.have.property('name', 'category_name')
+      client.on('new thread', (data) => {
+        data.should.have.property('name', 'category_name');
 
-				done()
-			})
+        done();
+      });
 
-			//Post new thread
-			agent
-				.post('/api/v1/thread')
-				.set('content-type', 'application/json')
-				.send({ name: `THREAD 3` , category: 'category_name' })
-				.then(res => {
-					return agent
-						.post('/api/v1/post')
-						.set('content-type', 'application/json')
-						.send({ threadId: res.body.id , content: `POST 3` })
-				})
-				.catch(done)
+      //Post new thread
+      agent
+        .post('/api/v1/thread')
+        .set('content-type', 'application/json')
+        .send({ name: `THREAD 3`, category: 'category_name' })
+        .then((res) => {
+          return agent
+            .post('/api/v1/post')
+            .set('content-type', 'application/json')
+            .send({ threadId: res.body.id, content: `POST 3` });
+        })
+        .catch(done);
+    });
 
-			
-		})
+    it('should emit a notification when a notification is emitted', (done) => {
+      let client = io.connect('http://localhost:3000');
 
-		it('should emit a notification when a notification is emitted', (done) => {
-			let client = io.connect('http://localhost:3000')
+      client.on('notification', (data) => {
+        data.should.have.property('type', 'mention');
 
-			client.on('notification', data => {
-				data.should.have.property('type', 'mention')
+        done();
+      });
 
-				done()
-			})
-
-			//Post new thread
-			agent
-				.post('/api/v1/thread')
-				.set('content-type', 'application/json')
-				.send({ name: `THREAD 3` , category: 'category_name' })
-				.then(res => {
-					return agent
-						.post('/api/v1/post')
-						.set('content-type', 'application/json')
-						.send({ threadId: res.body.id , content: `POST 4`, mentions: ['adminaccount'] })
-				})
-				.catch(done)
-
-			
-		})
-
-	})
-})
+      //Post new thread
+      agent
+        .post('/api/v1/thread')
+        .set('content-type', 'application/json')
+        .send({ name: `THREAD 3`, category: 'category_name' })
+        .then((res) => {
+          return agent
+            .post('/api/v1/post')
+            .set('content-type', 'application/json')
+            .send({
+              threadId: res.body.id,
+              content: `POST 4`,
+              mentions: ['adminaccount'],
+            });
+        })
+        .catch(done);
+    });
+  });
+});
